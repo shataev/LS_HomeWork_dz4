@@ -103,19 +103,10 @@ function findError(where) {
    должно быть преобразовано в <div></div><p></p>
  */
 function deleteTextNodes(where) {
-    let whereChilds = where.childNodes;
-
-    if (whereChilds.length < 1) {
-        return
-    }
-
-    for (let i = 0; i < whereChilds.length; i++) {
-        let child = whereChilds[i];
-
-        if (child.nodeType === 3) {
-            where.removeChild(child);
-            i--;
-        }
+    for (let child of [...where.childNodes]) {
+		if (child.nodeType === 3) {
+			where.removeChild(child);
+		}
     }
 }
 
@@ -132,22 +123,13 @@ function deleteTextNodes(where) {
    должно быть преобразовано в <span><div><b></b></div><p></p></span>
  */
 function deleteTextNodesRecursive(where) {
-    let whereChilds = where.childNodes;
-
-    if (whereChilds.length < 1) {
-        return
-    }
-
-    for (let i = 0; i < whereChilds.length; i++) {
-        let child = whereChilds[i];
-
-        if (child.nodeType === 3) {
-            where.removeChild(child);
-            i--;
-        } else {
-            deleteTextNodesRecursive(child);
+	for (let child of [...where.childNodes]) {
+		if (child.nodeType === 3) {
+			where.removeChild(child);
+		} else {
+			deleteTextNodesRecursive(child);
         }
-    }
+	}
 }
 
 /*
@@ -171,13 +153,13 @@ function deleteTextNodesRecursive(where) {
    }
  */
 function collectDOMStat(root, resultObj = {}) {
-    debugger;
+
     let childs = root.childNodes;
     let result = resultObj;
 
     result.tags = result.tags || {};
     result.classes = result.classes || {};
-    result.text = result.texts || 0;
+    result.texts = result.texts || 0;
 
     if (childs.length < 1) {
         return result;
@@ -192,11 +174,11 @@ function collectDOMStat(root, resultObj = {}) {
             let childTag = child.tagName;
             let childClasses = child.classList;
 
-            result.tags[childTag] = result.tags[childTag] ? result.tags[childTag]++ : 1;
+            result.tags[childTag] = result.tags[childTag] ? ++result.tags[childTag] : 1;
 
             if (childClasses.length > 0) {
                 for (let childClass of childClasses) {
-                    result.classes[childClass] = result.classes[childClass] ? result.classes[childClass]++ : 1;
+                    result.classes[childClass] = result.classes[childClass] ? ++result.classes[childClass] : 1;
                 }
             }
 
@@ -240,6 +222,21 @@ function collectDOMStat(root, resultObj = {}) {
    }
  */
 function observeChildNodes(where, fn) {
+
+    let observer = new MutationObserver(function(mutations){
+        mutations.map(function(mutRec){
+			let type = (mutRec.addedNodes.length > 0) ? 'insert' : 'remove';
+			let nodes = (mutRec.addedNodes.length > 0) ? [...mutRec.addedNodes] : [...mutRec.removedNodes];
+            let info = {type, nodes};
+
+			fn(info);
+        });
+    });
+
+    observer.observe(where, {
+        'childList': true,
+        'subtree': true
+    })
 }
 
 export {
